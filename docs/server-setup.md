@@ -46,3 +46,15 @@ sudo ufw limit 2222/tcp comment 'SSH rate-limited', sudo ufw enable, sudo ufw lo
 Имя узла
 
 sudo hostnamectl set-hostname devops-vm; в /etc/hosts строка 127.0.1.1 devops-vm.devops.local devops-vm.
+
+8. Веб-сервер
+
+    Пакет: nginx (sudo apt install -y nginx)
+    Конфигурация ресурса: /etc/nginx/sites-available/devops-site, включена ссылкой в /etc/nginx/sites-enabled/; стандартный ресурс default отключён (ссылка удалена)
+    Блок на порту 80 выполняет return 301 на HTTPS; блок на порту 443 с ssl, ssl_protocols TLSv1.2 TLSv1.3
+    Каталог ресурса: /var/www/devops-site, владелец devops, каталоги 755, файлы 644
+    Сертификат: /etc/ssl/certs/devops.crt, права 644, владелец root
+    Закрытый ключ: /etc/ssl/private/devops.key, права 600, владелец root
+    Формирование: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/devops.key -out /etc/ssl/certs/devops.crt -subj "/CN=devops.local" -addext "subjectAltName=DNS:devops.local"; срок действия 365 дней
+    Применение конфигурации: sudo nginx -t && sudo systemctl reload nginx
+    Доставка содержимого: scripts/deploy.sh (rsync с --delete и --chmod=D755,F644)

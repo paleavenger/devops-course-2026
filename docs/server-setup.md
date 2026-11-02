@@ -58,3 +58,15 @@ sudo hostnamectl set-hostname devops-vm; в /etc/hosts строка 127.0.1.1 de
     Формирование: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/devops.key -out /etc/ssl/certs/devops.crt -subj "/CN=devops.local" -addext "subjectAltName=DNS:devops.local"; срок действия 365 дней
     Применение конфигурации: sudo nginx -t && sudo systemctl reload nginx
     Доставка содержимого: scripts/deploy.sh (rsync с --delete и --chmod=D755,F644)
+
+    ## 9. Контейнеризация
+
+- Docker Engine установлен из официального репозитория (docker-ce, плагин docker-compose-plugin); версия: вывод `docker version`
+- Группа docker: пользователь devops (имеет sudo)
+- Проект на сервере: ~/app (Dockerfile, docker-compose.yml, app.py, requirements.txt)
+- Файл ~/app/.env: права 600, владелец devops; создаётся из .env.example, пароль генерируется `openssl rand -hex 16`; в репозиторий не добавляется
+- Публикуемые порты: 127.0.0.1:5000 (приложение); порт БД не публикуется
+- Именованный том: app_db_data (данные PostgreSQL); сеть проекта: app_backend
+- Запуск: `cd ~/app && docker compose up -d --build`
+- Nginx: в блок 443 добавлен `location /app/` с `proxy_pass http://127.0.0.1:5000/` и заголовками Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto
+- Зеркало образов (если используется): /etc/docker/daemon.json
